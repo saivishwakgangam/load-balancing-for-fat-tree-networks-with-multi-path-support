@@ -53,6 +53,7 @@ class Mytopo(Topo):
         for i in range(start,end):
             #macaddress=self.__macaddr_helper(self.hosts_count+i)
             e=self.addSwitch('E'+str(i))
+
             #print(e,end=" ")
             self.edge_names.append(e)
     
@@ -105,6 +106,7 @@ def run(k):
     net.waitConnected() 
     # get mac address of every client
     net.staticArp()
+    #handle host func starts
     net.pingAll(timeout="1.5")
     time.sleep(5)
     net.pingAll(timeout="1.5")
