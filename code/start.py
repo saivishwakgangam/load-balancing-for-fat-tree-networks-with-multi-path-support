@@ -4,6 +4,8 @@ from mininet.net import Mininet
 from mininet.log import setLogLevel,info
 from mininet.node import RemoteController
 from mininet.cli import CLI
+from mininet.link import TCLink
+import time
 import sys
 
 
@@ -33,16 +35,15 @@ class Mytopo(Topo):
         temp=format(n,"012X")
         mac_address=""
         for i in range(0,10,2):
-
             mac_address+=temp[i:i+2]+":"
         mac_address+=temp[10:]
         return mac_address
 
     def create_hosts(self):
         for i in range(1,self.hosts_count+1):
-            mac_address=self.__macaddr_helper(i)    
+            #mac_address=self.__macaddr_helper(i)    
             #print(i,mac_address)
-            h=self.addHost('H'+str(i),mac=mac_address)
+            h=self.addHost('H'+str(i))
             #print(h,end=" ")
             self.host_names.append(h)
     
@@ -74,7 +75,7 @@ class Mytopo(Topo):
             edges=self.edge_names[i:i+(self.k//2)]
             for a in aggrs:
                 for e in edges:
-                    self.addLink(e,a)
+                    self.addLink(e,a,cls=TCLink,bw=10)
     def create_core_switches(self):
         start=self.hosts_count+self.edge_switches+self.aggr_switches+1
         end=start+self.core_switches
@@ -84,17 +85,31 @@ class Mytopo(Topo):
             self.core_names.append(c)
         
     def link_aggr_core(self):
-        for c in self.core_names:
-            for a in self.aggr_names:
-                self.addLink(a,c)
+
+        l1=len(self.aggr_names)
+        l2=len(self.core_names)
+        M=self.k//2
+        for i in range(l1):
+            start=i%M*(M)
+            for j in range (start,start+M):
+                self.addLink(self.aggr_names[i],self.core_names[j],cls=TCLink,bw=10)
 
 
 
 def run(k):
     c=RemoteController('c0','0.0.0.0',6633)
-    net=Mininet(topo=Mytopo(k),host=CPULimitedHost,controller=None)
+    net=Mininet(topo=Mytopo(k),host=CPULimitedHost,link=TCLink,controller=None)
     net.addController(c)
     net.start()
+    net.waitConnected() 
+    net.staticArp()
+    #log.info(
+    net.pingAll(timeout="1.5")
+    time.sleep(5)
+    net.pingAll(timeout="1.5")
+    #load creation
+    net.iperf()
+    #net.
     CLI(net)
     net.stop()
     
