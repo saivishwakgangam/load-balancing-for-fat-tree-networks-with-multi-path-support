@@ -101,9 +101,10 @@ def run(k):
     net=Mininet(topo=Mytopo(k),host=CPULimitedHost,link=TCLink,controller=None)
     net.addController(c)
     net.start()
+    #wait until switch connects
     net.waitConnected() 
+    # get mac address of every client
     net.staticArp()
-    #log.info(
     net.pingAll(timeout="1.5")
     time.sleep(5)
     net.pingAll(timeout="1.5")
