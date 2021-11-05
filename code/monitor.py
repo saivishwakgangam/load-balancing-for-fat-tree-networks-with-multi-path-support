@@ -161,9 +161,9 @@ class Component3(object):
         else:
             self.find_port[dpid2]={}
             self.find_port[dpid2][dpid1]=port2
-        if(dpid2==28):
-            print(dpid1,port2)
-        print(dpid1,port1,"->",dpid2,port2)
+        #if(dpid2==28):
+            #print(dpid1,port2)
+        #print(dpid1,port1,"->",dpid2,port2)
         self.graph.add_edge(dpid1,dpid2,weight=1)
         #if(self.graph.number_of_edges()==96):
             #self.distances=nx.floyd_warshall(self.graph)
@@ -231,6 +231,7 @@ class Component3(object):
             con.send(msg)
             print("installed a dest flow for %i->%s"%(dpid,macAddr.toStr()))
         if(len(self.host_to_switch)==16 and not self.flag):
+            print(self.find_port)
             self.flag=True
             switches=list(self.connected_hosts.keys())
             #check=set()
@@ -276,27 +277,31 @@ class Component3(object):
                     con=core.openflow.getConnection(path[0])
                     outport=self.find_port[path[0]][path[1]]
                     for host_addr in hosts1:
-                        msg=of.ofp_flow_mod()
-                        match=of.ofp_match()
-                        match.dl_src=host_addr
-                        action=of.ofp_action_output(port=outport)
-                        msg.actions.append(action)
-                        msg.match=match
-                        con.send(msg)
-                        if(path[0]==17 and path[-1]==20):
-                            print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[0],path[1]))
+                        for host_addr2 in hosts2:
+                            msg=of.ofp_flow_mod()
+                            match=of.ofp_match()
+                            match.dl_src=host_addr
+                            match.dl_dst=host_addr2
+                            action=of.ofp_action_output(port=outport)
+                            msg.actions.append(action)
+                            msg.match=match
+                            con.send(msg)
+                            if(path[0]==17 and path[-1]==20):
+                                print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[0],path[1]))
                     con=core.openflow.getConnection(path[-1])
                     outport=self.find_port[path[-1]][path[-2]]
                     for host_addr in hosts2:
-                        msg=of.ofp_flow_mod()
-                        match=of.ofp_match()
-                        match.dl_src=host_addr
-                        action=of.ofp_action_output(port=outport)
-                        msg.actions.append(action)
-                        msg.match=match
-                        con.send(msg)
-                        if(path[0]==17 and path[-1]==20):
-                            print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[-1],path[-2]))
+                        for host_addr2 in hosts1:
+                            msg=of.ofp_flow_mod()
+                            match=of.ofp_match()
+                            match.dl_src=host_addr
+                            match.dl_dst=host_addr2
+                            action=of.ofp_action_output(port=outport)
+                            msg.actions.append(action)
+                            msg.match=match
+                            con.send(msg)
+                            if(path[0]==17 and path[-1]==20):
+                                print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[-1],path[-2]))
             #self.request_flow_stats(check)
             self._t=Timer(10,self.request_port_stats,recurring=True)
 
