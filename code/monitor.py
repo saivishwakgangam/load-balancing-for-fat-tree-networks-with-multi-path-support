@@ -56,34 +56,33 @@ class Component3(object):
             #to ignore host connected ports
             if(port in self.port_details[dpid]):
                 v=self.port_details[dpid][port]
-                if(dpid==17):
-                    print(stat['tx_bytes']*1e3)
-                self.graph[dpid][v]['weight']=(1.25*1e6)/((1.25*1e6)-(stat['tx_bytes']*1e3-self.prev_cycle_stat[dpid][port])/10)
+                
+                temp=self.graph[dpid][v]['weight']
+                temp1=(1.25*1e6)/((1.25*1e6)-(stat['tx_bytes']-self.prev_cycle_stat[dpid][port])/10)
+                self.graph[dpid][v]['weight']=temp1
                 #print((1.25*1e6)-(stat['tx_bytes']-self.prev_cycle_stat[dpid][port])/10)
-                self.prev_cycle_stat[dpid][port]=stat['tx_bytes']*1e3
+                #if(dpid==17 or dpid==26 or dpid==36 or dpid==28 or dpid==19):
+                    #print(port,dpid,temp,self.graph[dpid][v]['weight'])
+                self.prev_cycle_stat[dpid][port]=stat['tx_bytes']
             
-        
         if(self.stat_counter==20):
             print("All Stats Received")
             self.stat_counter=0
             switches=list(self.connected_hosts.keys())
             for i in range(len(switches)):
                 for j in range(i+1,len(switches)):
-                    path=nx.shortest_path(self.graph,switches[i],switches[j],'weight')
-                    
+                    path=nx.shortest_path(self.graph,switches[i],switches[j],'weight')      
                     cur_length=nx.shortest_path_length(self.graph,switches[i],switches[j],'weight')
                     prev_path=self.prev_path[(switches[i],switches[j])]
                     prev_length=0
                     for k in range(0,len(prev_path)-1):
-                        prev_length+=self.graph[path[k]][path[k+1]]['weight']
-                    change=(prev_length-cur_length)/prev_length
-                    if(change>0):
-                        print(change)
+                        prev_length+=self.graph[prev_path[k]][prev_path[k+1]]['weight']
                     if((prev_length-cur_length)/prev_length > 0.3):
                         #path modified
-                        self.prev_path[(switch[i],switch[j])]=path #updating path
-                        hosts1=self.connected_hosts[switch[i]]
-                        hosts2=self.connected_hosts[switch[j]]
+                        print(path)
+                        self.prev_path[(switches[i],switches[j])]=path #updating path
+                        hosts1=self.connected_hosts[switches[i]]
+                        hosts2=self.connected_hosts[switches[j]]
                         for k in range(1,len(path)-1):
                             con=core.openflow.getConnection(path[k])
                             for host_addr in hosts2:
@@ -94,7 +93,7 @@ class Component3(object):
                                 msg.match=match
                                 action=of.ofp_action_output(port=self.find_port[path[k]][path[k+1]])
                                 msg.actions.append(action)
-                                msg.command=OFPFC_MODIFY
+                                msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
                                 print("flow modified %i"%(path[k]))
                         for k in range(len(path)-2,0,-1):
@@ -107,9 +106,9 @@ class Component3(object):
                                 msg.match=match
                                 action=of.ofp_action_output(port=self.find_port[path[k]][path[k-1]])
                                 msg.actions.append(action)
-                                msg.command=OFPFC_MODIFY
+                                msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                print("flow modified %i"%(path[k]))
+                                #print("flow modified %i"%(path[k]))
                         con=core.openflow.getConnection(path[0])
                         outport=self.find_port[path[0]][path[1]]
                         for host_addr in hosts1:
@@ -121,11 +120,11 @@ class Component3(object):
                                 msg.match=match
                                 action=of.ofp_action_output(port=outport)
                                 msg.actions.append(action)
-                                msg.command=OFPFC_MODIFY
+                                msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                print("flow modified %i"%(path[0]))
+                                #print("flow modified %i"%(path[0]))
                         con=core.openflow.getConnection(path[-1])
-                        outport=self.find_port[path[-1][path[-2]]]
+                        outport=self.find_port[path[-1]][path[-2]]
                         for host_addr in hosts2:
                             for addr in hosts1:
                                 msg=of.ofp_flow_mod()
@@ -135,9 +134,9 @@ class Component3(object):
                                 msg.match=match
                                 action=of.ofp_action_output(port=outport)
                                 msg.actions.append(action)
-                                msg.command=OFPFC_MODIFY
+                                msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                print("flow modified %i"%(path[-1]))
+                                #print("flow modified %i"%(path[-1]))
                                 
 
 
