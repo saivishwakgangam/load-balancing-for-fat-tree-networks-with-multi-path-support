@@ -9,7 +9,7 @@
 ### start mininet with custom topology(K fat tree)
 - cd ~
 - sudo -E python mininet/custom/start.py 4
-- The above commands initialzies a 4-fat tree
+- The above commands initializes a 4-fat tree
 - observe the results of iperf
 ### sample topology
 ![4 fat tree](/topo.png)
