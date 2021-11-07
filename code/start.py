@@ -61,7 +61,7 @@ class Mytopo(Topo):
         for i,edge_switch in enumerate(self.edge_names):
             corr_hosts=self.host_names[i*(self.k//2):(i+1)*(self.k//2)]
             for host in corr_hosts:
-                self.addLink(host,edge_switch)
+                self.addLink(host,edge_switch,cls=TCLink,bw=10)
     def create_aggr_switches(self):
         start=self.hosts_count+self.edge_switches+1
         end=start+self.aggr_switches
@@ -107,12 +107,28 @@ def run(k):
     # get mac address of every client
     net.staticArp()
     #handle host func starts
-    net.pingAll(timeout="1.5")
-    time.sleep(5)
-    net.pingAll(timeout="1.5")
+    net.pingAll(timeout="0.1")
+    time.sleep(1)
+    net.pingAll(timeout="0.1")
     #load creation
-    net.iperf()
+    print("performing iperf in background")
+    hosts1=net.get('H1','H2','H3','H7')
+    #print(hosts)
+    hosts1[3].cmd('iperf -s -u &> H7.log &')
+    for host in hosts1[:-1]:
+        host.cmd('iperf -c 10.0.0.7 -u -b 6M &')
+    hosts2=net.get('H1','H2','H3','H8')
+    hosts2[3].cmd('iperf -s -u &> H8.log &')
+    for host in hosts2[:-1]:
+        host.cmd('iperf -c 10.0.0.8 -u -b 7M &')
+
+
+    #net.iperf(hosts=[H1,H7],I4type='UDP',udpBw="5M")
+    #net.iperf(hosts=[H2,H7],I4Type='UDP',udpBw="5M")
     #net.
+    time.sleep(15)
+    hosts1[3].cmdPrint('cat H7.log')
+    hosts2[3].cmdPrint('cat H8.log')
     CLI(net)
     net.stop()
     
