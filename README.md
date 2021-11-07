@@ -1,6 +1,6 @@
 # load-balancing-for-fat-tree-networks-with-multi-path-support
 ### run following commands in mininet vm
-- cp code/start.py ~/mininet/custom/`
+- cp code/start.py ~/mininet/custom/
 - cp code/monitor.py pox/ext/
 ### start controller
 - cd pox
