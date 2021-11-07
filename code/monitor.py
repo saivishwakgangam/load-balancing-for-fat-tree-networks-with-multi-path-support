@@ -7,8 +7,10 @@ import networkx as nx
 from pox.lib.util import dpid_to_str
 log = core.getLogger()
 class Component3(object):
-    def __init__(self):
+    def __init__(self,arg,arg2="dynamic"):
         self.time=0
+        self.k=arg
+        self.method=arg2
         self.graph=nx.DiGraph()
         core.openflow.addListenerByName("PortStatsReceived",self._handle_port_stats)
         core.openflow_discovery.addListenerByName("LinkEvent",self._handle_link)
@@ -20,6 +22,7 @@ class Component3(object):
         self.host_to_switch={}
         self.distances={}
         self.hosts=[]
+        self.total_switches=((self.k//2)*(self.k//2))+(self.k*self.k)
         self.find_port={}
         self.mac_to_port={}
         self.flag=False
@@ -65,8 +68,8 @@ class Component3(object):
                     #print(port,dpid,temp,self.graph[dpid][v]['weight'])
                 self.prev_cycle_stat[dpid][port]=stat['tx_bytes']
             
-        if(self.stat_counter==20):
-            print("All Stats Received")
+        if(self.stat_counter==self.total_switches):
+            print("All Stats Received "+str(self.total_switches))
             self.stat_counter=0
             switches=list(self.connected_hosts.keys())
             for i in range(len(switches)):
@@ -79,7 +82,8 @@ class Component3(object):
                         prev_length+=self.graph[prev_path[k]][prev_path[k+1]]['weight']
                     if((prev_length-cur_length)/prev_length > 0.3):
                         #path modified
-                        print(path)
+                        print("PATH MODIFIED")
+                        print(str(self.prev_path[(switches[i],switches[j])])+"------->"+str(path))
                         self.prev_path[(switches[i],switches[j])]=path #updating path
                         hosts1=self.connected_hosts[switches[i]]
                         hosts2=self.connected_hosts[switches[j]]
@@ -95,7 +99,6 @@ class Component3(object):
                                 msg.actions.append(action)
                                 msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                print("flow modified %i"%(path[k]))
                         for k in range(len(path)-2,0,-1):
                             con=core.openflow.getConnection(path[k])
                             for host_addr in hosts1:
@@ -108,7 +111,6 @@ class Component3(object):
                                 msg.actions.append(action)
                                 msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                #print("flow modified %i"%(path[k]))
                         con=core.openflow.getConnection(path[0])
                         outport=self.find_port[path[0]][path[1]]
                         for host_addr in hosts1:
@@ -122,7 +124,6 @@ class Component3(object):
                                 msg.actions.append(action)
                                 msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                #print("flow modified %i"%(path[0]))
                         con=core.openflow.getConnection(path[-1])
                         outport=self.find_port[path[-1]][path[-2]]
                         for host_addr in hosts2:
@@ -136,7 +137,6 @@ class Component3(object):
                                 msg.actions.append(action)
                                 msg.command=of.OFPFC_MODIFY
                                 con.send(msg)
-                                #print("flow modified %i"%(path[-1]))
                                 
 
 
@@ -250,8 +250,8 @@ class Component3(object):
                             msg.actions.append(action)
                             msg.match=match
                             con.send(msg)
-                            if(path[0]==17 and path[-1]==20):
-                                print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[0],path[1]))
+                            #if(path[0]==17 and path[-1]==20):
+                               # print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[0],path[1]))
                     con=core.openflow.getConnection(path[-1])
                     outport=self.find_port[path[-1]][path[-2]]
                     for host_addr in hosts2:
@@ -264,18 +264,19 @@ class Component3(object):
                             msg.actions.append(action)
                             msg.match=match
                             con.send(msg)
-                            if(path[0]==17 and path[-1]==20):
-                                print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[-1],path[-2]))
+                            #if(path[0]==17 and path[-1]==20):
+                               # print("installed src flow for %s->%i->%i"%(host_addr.toStr(),path[-1],path[-2]))
             #self.request_flow_stats(check)
-            self._t=Timer(10,self.request_port_stats,recurring=True)
+            if(self.method=="dynamic"):
+                self._t=Timer(10,self.request_port_stats,recurring=True)
 
 
                     
             
 
     
-def launch():
-    core.registerNew(Component3)
+def launch(k,method):
+    core.registerNew(Component3,int(k),method)
 
 
 
