@@ -11,3 +11,5 @@
 - sudo -E python mininet/custom/start.py 4
 - The above commands initialzies a 4-fat tree
 - observe the results of iperf
+### sample topology
+![4 fat tree](/topo.png)
